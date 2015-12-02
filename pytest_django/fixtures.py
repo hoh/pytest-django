@@ -238,21 +238,24 @@ def admin_user(db, django_user_model, django_username_field):
     try:
         user = UserModel._default_manager.get(**{username_field: 'admin'})
     except UserModel.DoesNotExist:
-        extra_fields = {}
-        if username_field != 'username':
-            extra_fields[username_field] = 'admin'
+        extra_fields = {username_field: 'admin'}
+        if username_field == 'email':
+            extra_fields[username_field] = 'admin@example.com'
         user = UserModel._default_manager.create_superuser(
-            'admin', 'admin@example.com', 'password', **extra_fields)
+            password='password', **extra_fields)
     return user
 
 
 @pytest.fixture()
-def admin_client(db, admin_user):
-    """A Django test client logged in as an admin user."""
+def admin_client(db, admin_user, django_username_field):
+    """
+    A Django test client logged in as an admin user (via the ``admin_user``
+    fixture).
+    """
     from django.test.client import Client
 
     client = Client()
-    client.login(username=admin_user.username, password='password')
+    client.login(username=getattr(admin_user, django_username_field), password='password')
     return client
 
 
